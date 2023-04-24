@@ -1,12 +1,12 @@
 import os
 import time
 import logging
+from http import HTTPStatus
 
 import telegram
 import requests
 from dotenv import load_dotenv
 from requests.exceptions import RequestException
-from http import HTTPStatus
 
 from exception import ResponsePracticumException
 
@@ -64,7 +64,7 @@ def get_api_answer(current_timestamp):
         response = requests.get(url=url, params=params, headers=headers)
     except RequestException as error:
         error_message = (
-            'Ошибка подключения к API: {error}\n {url}\n {headers}\n {params}'
+            f'Ошибка подключения к API: {error}\n {url}\n {headers}\n {params}'
             .format(error=error, url=url, params=params, headers=headers))
         raise ResponsePracticumException(error_message)
 
@@ -117,14 +117,15 @@ def parse_status(homework):
 def check_tokens():
     """Проверка доступности переменных окружения."""
     tokens = all([PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID])
-    return tokens or logging.critical('Токен {} не найден!'.format(tokens))
+    if not tokens:
+        logger.critical('Не найдены необходимые токены!')
+    return tokens or logger.critical('Токен {} не найден!'.format(tokens))
 
 
 def main():
     """Основная логика работы бота."""
     if not check_tokens():
         error_message = 'Токены недоступны'
-        logging.error(error_message)
         raise Exception(error_message)
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
